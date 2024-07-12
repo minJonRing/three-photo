@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas 照片查看器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/23.1.1/tween.umd.js"
+        integrity="sha512-J8rv5Qz++2kwDP7YUBqxm3LCtPXWghcqXvxPrLrk81E31eMA/tEAjKakXJJDQoy9tj+41+EDYDsD6Xc76lnT7w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: auto;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+        var image = new Image();
+        var scale = {
+            value: 1.0
+        };
+        var offsetX = 0;
+        var offsetY = 0;
+        var isDragging = false;
+        var lastX;
+        var lastY;
+        var minOffsetX = 0;
+        var maxOffsetX;
+        var minOffsetY = 0;
+        var maxOffsetY;
+
+        // 加载图像
+        image.onload = function () {
+            drawImage();
+            updateMinOffsets();
+        };
+        image.src = './src/assets/logo.png'; // 替换为你的图像URL
+
+        // 绘制图像
+        function drawImage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, offsetX, offsetY, image.width * scale.value, image.height * scale.value);
+        }
+
+        // 缩放图像
+        function zoom(factor) {
+            // scale *= factor;
+            //相机 - 位置动画
+            let aaa = null
+            const a1 = new TWEEN.Tween(scale)
+                .to({ value: scale.value * factor }, 600)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .start()
+                .onComplete(function (e) {
+                    TWEEN.remove(this)
+                    console.log(aaa)
+                    cancelAnimationFrame(aaa)
+                })
+            function animate() {
+                drawImage();
+                updateMinOffsets();
+                a1.update()
+                console.log(1)
+                aaa = requestAnimationFrame(animate)
+            }
+            animate()
+        }
+
+        // 平移图像
+        function pan(dx, dy) {
+            // console.log(dx, dy)
+            offsetX += dx;
+            offsetY += dy;
+            // console.log(offsetX, minOffsetX)
+            // 限制平移范围
+            offsetX = offsetX < minOffsetX ? minOffsetX : offsetX > maxOffsetX ? maxOffsetX : offsetX
+            offsetY = offsetY < minOffsetY ? minOffsetY : offsetY > maxOffsetY ? maxOffsetY : offsetY
+            drawImage();
+        }
+
+        // 更新平移的最小范围
+        function updateMinOffsets() {
+            maxOffsetX = canvas.width - (image.width * scale.value);
+            maxOffsetY = canvas.height - (image.height * scale.value);
+        }
+
+        // 鼠标事件 - 缩放
+        canvas.addEventListener('wheel', function (event) {
+            event.preventDefault(); // 阻止默认滚动行为
+            var factor = event.deltaY > 0 ? 0.7 : 1.3; // 根据滚动方向确定缩放因子
+
+            zoom(factor);
+        });
+
+        // 鼠标事件 - 平移
+        canvas.addEventListener('mousedown', function (event) {
+            isDragging = true;
+            lastX = event.clientX;
+            lastY = event.clientY;
+        });
+
+        canvas.addEventListener('mousemove', function (event) {
+            if (isDragging) {
+                var dx = event.clientX - lastX;
+                var dy = event.clientY - lastY;
+                pan(dx, dy);
+                lastX = event.clientX;
+                lastY = event.clientY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', function () {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', function () {
+            isDragging = false;
+        });
+
+
+    </script>
+</body>
+
+</html>
